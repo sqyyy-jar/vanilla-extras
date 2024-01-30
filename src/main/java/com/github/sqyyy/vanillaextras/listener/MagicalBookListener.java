@@ -65,7 +65,7 @@ public class MagicalBookListener implements Listener {
                 event.setResult(result);
             } else {
                 if (result != null) {
-                    result.editMeta(meta -> meta.displayName(Component.text(renameText).color(NamedTextColor.AQUA)));
+                    result.editMeta(meta -> meta.displayName(Component.text(renameText)));
                 }
             }
             return;

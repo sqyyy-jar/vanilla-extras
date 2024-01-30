@@ -10,8 +10,6 @@ import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
-
 public class ItemUtil {
     private static final Style DEFAULT_STYLE = Style.empty().decoration(TextDecoration.ITALIC, false);
 

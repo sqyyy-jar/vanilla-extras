@@ -9,7 +9,6 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataContainer;
-import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 
 public class MagicalBook extends ItemType {
@@ -30,9 +29,9 @@ public class MagicalBook extends ItemType {
             meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
             meta.addEnchant(Enchantment.DURABILITY, 1, true);
             PersistentDataContainer pdc = meta.getPersistentDataContainer();
-            PersistentDataContainer enchants = pdc.getAdapterContext().newPersistentDataContainer();
-            enchants.set(new NamespacedKey("test", "test"), PersistentDataType.INTEGER, 1);
-            ItemUtil.setMagicalBookEnchantments(pdc, enchants);
+//            PersistentDataContainer enchants = pdc.getAdapterContext().newPersistentDataContainer();
+//            enchants.set(new NamespacedKey("test", "test"), PersistentDataType.INTEGER, 1);
+//            ItemUtil.setMagicalBookEnchantments(pdc, enchants);
             ItemUtil.setItemMetadata(pdc, this);
         });
         return item;
