@@ -1,9 +1,10 @@
 package com.github.sqyyy.vanillaextras.listener;
 
+import com.github.sqyyy.vanillaextras.VanillaExtras;
 import com.github.sqyyy.vanillaextras.item.ItemType;
+import com.github.sqyyy.vanillaextras.magicalbook.MagicalEnchantment;
 import com.github.sqyyy.vanillaextras.util.ItemUtil;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.event.Event;
@@ -14,14 +15,18 @@ import org.bukkit.event.inventory.PrepareAnvilEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.AnvilInventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class MagicalBookListener implements Listener {
+    private final VanillaExtras vanillaExtras;
     private final ItemType magicalBook;
 
-    public MagicalBookListener(ItemType magicalBook) {
+    public MagicalBookListener(VanillaExtras vanillaExtras, ItemType magicalBook) {
+        this.vanillaExtras = vanillaExtras;
         this.magicalBook = magicalBook;
     }
 
@@ -77,38 +82,104 @@ public class MagicalBookListener implements Listener {
             return;
         }
         if (this.magicalBook.keyString().equals(firstId)) { // Both items are magical books
-            PersistentDataContainer firstEnchants = ItemUtil.getMagicalBookEnchantments(firstPdc);
-            PersistentDataContainer secondEnchants = ItemUtil.getMagicalBookEnchantments(secondPdc);
+            PersistentDataContainer firstEnchants = ItemUtil.getBookEnchantments(firstPdc);
+            PersistentDataContainer secondEnchants = ItemUtil.getBookEnchantments(secondPdc);
             mergeItems(event, firstEnchants, secondEnchants);
-        } else { // The second item is a magical book
-            // TODO: implement enchanting
-            PersistentDataContainer secondEnchants = ItemUtil.getMagicalBookEnchantments(secondPdc);
+        } else { // Only the second item is a magical book
+            PersistentDataContainer secondEnchants = ItemUtil.getBookEnchantments(secondPdc);
+            enchantItem(event, firstItem, secondEnchants);
         }
     }
 
     private void mergeItems(PrepareAnvilEvent event, @Nullable PersistentDataContainer firstEnchants,
                             @Nullable PersistentDataContainer secondEnchants) {
-        if (firstEnchants == null || firstEnchants.isEmpty() || secondEnchants == null || secondEnchants.isEmpty()) {
+        if (firstEnchants == null || firstEnchants.isEmpty() || secondEnchants == null || secondEnchants.isEmpty()) { // Both books are empty
             event.setResult(null);
             return;
         }
-        for (NamespacedKey key : firstEnchants.getKeys()) {
-            Integer secondLevel = secondEnchants.get(key, PersistentDataType.INTEGER);
-            if (secondLevel == null) { // No need to merge
+        boolean merged = false;
+        for (NamespacedKey enchantKey : secondEnchants.getKeys()) {
+            MagicalEnchantment magicalEnchantment = this.vanillaExtras.magicalEnchantments().get(enchantKey);
+            if (magicalEnchantment == null) { // Invalid enchantment
                 continue;
             }
-            @SuppressWarnings("DataFlowIssue") int firstLevel = firstEnchants.get(key, PersistentDataType.INTEGER);
-            int level;
-            if (firstLevel == secondLevel) {
-                level = firstLevel + 1;
-            } else {
-                level = Math.max(firstLevel, secondLevel);
+            if (mergeEnchantment(magicalEnchantment, firstEnchants, secondEnchants,
+                enchantKey)) { // The enchantment was merged successfully
+                merged = true;
             }
-            firstEnchants.set(key, PersistentDataType.INTEGER, level);
+        }
+        if (!merged) { // Nothing was merged
+            event.setResult(null);
+            return;
         }
         ItemStack mergedBook = this.magicalBook.create();
-        mergedBook.editMeta(meta -> ItemUtil.setMagicalBookEnchantments(meta.getPersistentDataContainer(), firstEnchants));
-        event.getInventory().setRepairCost(1);
+        mergedBook.editMeta(meta -> ItemUtil.setBookEnchantments(this.vanillaExtras, meta, firstEnchants));
+        event.getInventory().setRepairCost(1); // TODO: add repair cost
         event.setResult(mergedBook);
+    }
+
+    private void enchantItem(PrepareAnvilEvent event, @NotNull ItemStack firstItem,
+                             @Nullable PersistentDataContainer bookEnchants) {
+        if (bookEnchants == null || bookEnchants.isEmpty()) { // The book contains no enchantments
+            event.setResult(null);
+            return;
+        }
+        ItemStack resultItem = firstItem.clone();
+        ItemMeta itemMeta = resultItem.getItemMeta();
+        PersistentDataContainer itemPdc = itemMeta.getPersistentDataContainer();
+        PersistentDataContainer itemEnchants = ItemUtil.getEnchantments(itemPdc);
+        if (itemEnchants == null) { // The item contains no enchantments yet
+            itemEnchants = itemPdc.getAdapterContext().newPersistentDataContainer();
+        }
+        boolean compatible = false;
+        for (NamespacedKey enchantKey : bookEnchants.getKeys()) {
+            MagicalEnchantment magicalEnchantment = this.vanillaExtras.magicalEnchantments().get(enchantKey);
+            if (magicalEnchantment == null) { // Invalid enchantment
+                continue;
+            }
+            if (magicalEnchantment.enchantPredicate().isCompatible(firstItem)) { // The enchantment is not compatible
+                continue;
+            }
+            if (mergeEnchantment(magicalEnchantment, itemEnchants, bookEnchants,
+                enchantKey)) { // The enchantment was merged successfully
+                compatible = true;
+            }
+        }
+        if (!compatible) { // There is no compatible enchantment
+            event.setResult(null);
+            return;
+        }
+        // There is at least one compatible enchantment
+        ItemUtil.setEnchantments(this.vanillaExtras, itemMeta, itemEnchants);
+        resultItem.setItemMeta(itemMeta);
+        event.getInventory().setRepairCost(1); // TODO: add repair cost
+        event.setResult(resultItem);
+    }
+
+    /**
+     * Merges an enchantment from {@code sourceEnchants} into {@code targetEnchants}.
+     *
+     * @return whether the merge was successful or not.
+     */
+    private boolean mergeEnchantment(MagicalEnchantment magicalEnchantment, PersistentDataContainer targetEnchants,
+                                     PersistentDataContainer sourceEnchants, NamespacedKey key) {
+        Integer _sourceLevel = sourceEnchants.get(key, PersistentDataType.INTEGER);
+        int secondLevel = _sourceLevel == null ? 0 : _sourceLevel;
+        if (secondLevel <= 0) { // Invalid enchantment level
+            return false;
+        }
+        Integer _targetLevel = targetEnchants.get(key, PersistentDataType.INTEGER);
+        int targetLevel = _targetLevel == null ? 0 : _targetLevel;
+        int level;
+        if (targetLevel == secondLevel) { // Equal levels
+            level = targetLevel + 1;
+        } else { // Different levels
+            level = Math.max(targetLevel, secondLevel);
+        }
+        if (level > magicalEnchantment.maxLevel()) { // Max level reached
+            return false;
+        }
+        targetEnchants.set(key, PersistentDataType.INTEGER, level);
+        return true;
     }
 }

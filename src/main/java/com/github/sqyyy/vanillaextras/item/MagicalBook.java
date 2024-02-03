@@ -13,7 +13,14 @@ import org.jetbrains.annotations.NotNull;
 
 public class MagicalBook extends ItemType {
     public static final Key KEY = Key.key(VanillaExtras.NAMESPACE, "magical_book");
-    public static final NamespacedKey ENCHANTMENTS_KEY = new NamespacedKey(VanillaExtras.NAMESPACE, "magical_book/enchantments");
+    /**
+     * Key for enchantments on a magical book
+     */
+    public static final NamespacedKey BOOK_ENCHANTMENTS_KEY = new NamespacedKey(VanillaExtras.NAMESPACE, "book_enchantments");
+    /**
+     * Key for enchantments on enchanted items
+     */
+    public static final NamespacedKey ENCHANTMENTS_KEY = new NamespacedKey(VanillaExtras.NAMESPACE, "enchantments");
 
     @Override
     public @NotNull Key key() {
@@ -29,9 +36,6 @@ public class MagicalBook extends ItemType {
             meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
             meta.addEnchant(Enchantment.DURABILITY, 1, true);
             PersistentDataContainer pdc = meta.getPersistentDataContainer();
-//            PersistentDataContainer enchants = pdc.getAdapterContext().newPersistentDataContainer();
-//            enchants.set(new NamespacedKey("test", "test"), PersistentDataType.INTEGER, 1);
-//            ItemUtil.setMagicalBookEnchantments(pdc, enchants);
             ItemUtil.setItemMetadata(pdc, this);
         });
         return item;

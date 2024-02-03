@@ -2,6 +2,7 @@ package com.github.sqyyy.vanillaextras.util;
 
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.Keyed;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -13,6 +14,7 @@ public class Registry<T extends Keyed> {
         this.registry = new HashMap<>();
     }
 
+    @SafeVarargs
     public Registry(T... values) {
         this();
         for (T value : values) {
@@ -24,7 +26,7 @@ public class Registry<T extends Keyed> {
         this.registry.put(value.key(), value);
     }
 
-    public T get(Key key) {
+    public @Nullable T get(Key key) {
         return this.registry.get(key);
     }
 }
