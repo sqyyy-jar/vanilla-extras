@@ -5,6 +5,7 @@ import com.github.sqyyy.vanillaextras.item.ItemType;
 import com.github.sqyyy.vanillaextras.item.MagicalBook;
 import com.github.sqyyy.vanillaextras.listener.AutoSmeltListener;
 import com.github.sqyyy.vanillaextras.listener.GravityAspectListener;
+import com.github.sqyyy.vanillaextras.listener.LifeStealListener;
 import com.github.sqyyy.vanillaextras.listener.MagicalBookListener;
 import com.github.sqyyy.vanillaextras.magicalbook.ItemPredicate;
 import com.github.sqyyy.vanillaextras.magicalbook.MagicalEnchantment;
@@ -21,7 +22,6 @@ import org.bukkit.command.PluginCommand;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.loot.LootTables;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.PluginManager;
@@ -50,6 +50,7 @@ public final class VanillaExtras extends JavaPlugin {
         registerEnchantment("dummy", "Dummy", 1, new TagItemPredicate(MaterialTags.SWORDS));
         registerEnchantment("gravity_aspect", "Gravity Aspect", 10, new TagItemPredicate(MaterialTags.BOWS));
         registerEnchantment("auto_smelt", "Auto Smelt", 1, new TagItemPredicate(MaterialTags.PICKAXES));
+        registerEnchantment("life_steal", "Life Steal", 5, new TagItemPredicate(MaterialTags.SWORDS));
     }
 
     private void registerEnchantment(String key, String name, int maxLevel, ItemPredicate enchantPredicate) {
@@ -74,6 +75,7 @@ public final class VanillaExtras extends JavaPlugin {
         pluginManager.registerEvents(new MagicalBookListener(this), this);
         pluginManager.registerEvents(new GravityAspectListener(), this);
         pluginManager.registerEvents(new AutoSmeltListener(), this);
+        pluginManager.registerEvents(new LifeStealListener(), this);
 
     }
 
