@@ -3,6 +3,8 @@ package com.github.sqyyy.vanillaextras;
 import com.destroystokyo.paper.MaterialTags;
 import com.github.sqyyy.vanillaextras.item.ItemType;
 import com.github.sqyyy.vanillaextras.item.MagicalBook;
+import com.github.sqyyy.vanillaextras.listener.AutoSmeltListener;
+import com.github.sqyyy.vanillaextras.listener.GravityAspectListener;
 import com.github.sqyyy.vanillaextras.listener.MagicalBookListener;
 import com.github.sqyyy.vanillaextras.magicalbook.ItemPredicate;
 import com.github.sqyyy.vanillaextras.magicalbook.MagicalEnchantment;
@@ -19,6 +21,7 @@ import org.bukkit.command.PluginCommand;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.loot.LootTables;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.PluginManager;
@@ -42,8 +45,11 @@ public final class VanillaExtras extends JavaPlugin {
     }
 
     private void loadEnchantments() {
+        // TODO: remove testing enchantments
         registerEnchantment("test", "Test", 3, new MaterialItemPredicate(Material.BOW));
         registerEnchantment("dummy", "Dummy", 1, new TagItemPredicate(MaterialTags.SWORDS));
+        registerEnchantment("gravity_aspect", "Gravity Aspect", 10, new TagItemPredicate(MaterialTags.BOWS));
+        registerEnchantment("auto_smelt", "Auto Smelt", 1, new TagItemPredicate(MaterialTags.PICKAXES));
     }
 
     private void registerEnchantment(String key, String name, int maxLevel, ItemPredicate enchantPredicate) {
@@ -66,6 +72,9 @@ public final class VanillaExtras extends JavaPlugin {
         command.setTabCompleter((sender, command1, label, args) -> List.of(NAMESPACE + ":"));
         PluginManager pluginManager = getServer().getPluginManager();
         pluginManager.registerEvents(new MagicalBookListener(this), this);
+        pluginManager.registerEvents(new GravityAspectListener(), this);
+        pluginManager.registerEvents(new AutoSmeltListener(), this);
+
     }
 
     private boolean command(CommandSender sender, Command command, String label, String[] args) {

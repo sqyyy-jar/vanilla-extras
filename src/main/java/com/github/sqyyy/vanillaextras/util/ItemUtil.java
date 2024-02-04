@@ -61,4 +61,14 @@ public class ItemUtil {
         }
         meta.lore(lore);
     }
+
+    public static int getEnchantment(ItemMeta meta, NamespacedKey key) {
+        PersistentDataContainer pdc = meta.getPersistentDataContainer();
+        PersistentDataContainer enchantments = getEnchantments(pdc);
+        if (enchantments == null) {
+            return 0;
+        }
+        Integer _level = enchantments.get(key, PersistentDataType.INTEGER);
+        return _level == null ? 0 : _level;
+    }
 }
