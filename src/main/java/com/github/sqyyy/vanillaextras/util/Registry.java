@@ -14,14 +14,6 @@ public class Registry<T extends Keyed> {
         this.registry = new HashMap<>();
     }
 
-    @SafeVarargs
-    public Registry(T... values) {
-        this();
-        for (T value : values) {
-            this.register(value);
-        }
-    }
-
     public void register(T value) {
         this.registry.put(value.key(), value);
     }

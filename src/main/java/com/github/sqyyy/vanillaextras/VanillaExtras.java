@@ -1,12 +1,17 @@
 package com.github.sqyyy.vanillaextras;
 
+import com.destroystokyo.paper.MaterialTags;
 import com.github.sqyyy.vanillaextras.item.ItemType;
 import com.github.sqyyy.vanillaextras.item.MagicalBook;
 import com.github.sqyyy.vanillaextras.listener.MagicalBookListener;
+import com.github.sqyyy.vanillaextras.magicalbook.ItemPredicate;
 import com.github.sqyyy.vanillaextras.magicalbook.MagicalEnchantment;
+import com.github.sqyyy.vanillaextras.magicalbook.MaterialItemPredicate;
+import com.github.sqyyy.vanillaextras.magicalbook.TagItemPredicate;
 import com.github.sqyyy.vanillaextras.util.ItemUtil;
 import com.github.sqyyy.vanillaextras.util.Registry;
 import net.kyori.adventure.key.Key;
+import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -21,11 +26,30 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.List;
 
-public class VanillaExtras extends JavaPlugin {
+public final class VanillaExtras extends JavaPlugin {
     public static final String NAMESPACE = "vanilla_extras";
-    private final MagicalBook magicalBook = new MagicalBook();
-    private final Registry<ItemType> itemTypes = new Registry<>(this.magicalBook);
+    private final Registry<ItemType> itemTypes = new Registry<>();
     private final Registry<MagicalEnchantment> magicalEnchantments = new Registry<>();
+    private MagicalBook magicalBook;
+
+    public VanillaExtras() {
+        loadItemTypes();
+        loadEnchantments();
+    }
+
+    private void loadItemTypes() {
+        this.itemTypes.register(this.magicalBook = new MagicalBook());
+    }
+
+    private void loadEnchantments() {
+        registerEnchantment("test", "Test", 3, new MaterialItemPredicate(Material.BOW));
+        registerEnchantment("dummy", "Dummy", 1, new TagItemPredicate(MaterialTags.SWORDS));
+    }
+
+    private void registerEnchantment(String key, String name, int maxLevel, ItemPredicate enchantPredicate) {
+        this.magicalEnchantments.register(
+            new MagicalEnchantment(new NamespacedKey(NAMESPACE, key), name, maxLevel, enchantPredicate));
+    }
 
     public Registry<ItemType> itemTypes() {
         return this.itemTypes;
@@ -41,7 +65,7 @@ public class VanillaExtras extends JavaPlugin {
         command.setExecutor(this::command);
         command.setTabCompleter((sender, command1, label, args) -> List.of(NAMESPACE + ":"));
         PluginManager pluginManager = getServer().getPluginManager();
-        pluginManager.registerEvents(new MagicalBookListener(this, this.magicalBook), this);
+        pluginManager.registerEvents(new MagicalBookListener(this), this);
     }
 
     private boolean command(CommandSender sender, Command command, String label, String[] args) {
@@ -86,7 +110,8 @@ public class VanillaExtras extends JavaPlugin {
                     return true;
                 }
                 enchantments.set(key, PersistentDataType.INTEGER, 1);
-                ItemUtil.setBookEnchantments(this, meta, enchantments);
+                ItemUtil.setBookEnchantments(meta, enchantments);
+                ItemUtil.setEnchantmentsLore(this, meta, enchantments);
                 book.setItemMeta(meta);
             }
             default -> player.sendRichMessage("<red>Usage: /extras give|enchant <key>");

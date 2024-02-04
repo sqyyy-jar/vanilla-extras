@@ -37,36 +37,27 @@ public class ItemUtil {
         return pdc.get(MagicalBook.BOOK_ENCHANTMENTS_KEY, PersistentDataType.TAG_CONTAINER);
     }
 
-    public static void setBookEnchantments(VanillaExtras vanillaExtras, ItemMeta meta, PersistentDataContainer enchantments) {
+    public static void setBookEnchantments(ItemMeta meta, PersistentDataContainer enchantments) {
         meta.getPersistentDataContainer().set(MagicalBook.BOOK_ENCHANTMENTS_KEY, PersistentDataType.TAG_CONTAINER, enchantments);
-        List<Component> lore = new ArrayList<>(enchantments.getKeys().size());
-        for (NamespacedKey enchantKey : enchantments.getKeys()) {
-            MagicalEnchantment magicalEnchantment = vanillaExtras.magicalEnchantments().get(enchantKey);
-            if (magicalEnchantment == null) {
-                continue;
-            }
-            lore.add(Component.text(
-                magicalEnchantment.key().asString() + " " + enchantments.get(enchantKey, PersistentDataType.INTEGER),
-                NamedTextColor.GREEN));
-        }
-        meta.lore(lore);
     }
 
     public static @Nullable PersistentDataContainer getEnchantments(PersistentDataContainer pdc) {
         return pdc.get(MagicalBook.ENCHANTMENTS_KEY, PersistentDataType.TAG_CONTAINER);
     }
 
-    public static void setEnchantments(VanillaExtras vanillaExtras, ItemMeta meta, PersistentDataContainer enchantments) {
+    public static void setEnchantments(ItemMeta meta, PersistentDataContainer enchantments) {
         meta.getPersistentDataContainer().set(MagicalBook.ENCHANTMENTS_KEY, PersistentDataType.TAG_CONTAINER, enchantments);
+    }
+
+    public static void setEnchantmentsLore(VanillaExtras vanillaExtras, ItemMeta meta, PersistentDataContainer enchantments) {
         List<Component> lore = new ArrayList<>(enchantments.getKeys().size());
         for (NamespacedKey enchantKey : enchantments.getKeys()) {
             MagicalEnchantment magicalEnchantment = vanillaExtras.magicalEnchantments().get(enchantKey);
             if (magicalEnchantment == null) {
                 continue;
             }
-            lore.add(Component.text(
-                magicalEnchantment.key().asString() + " " + enchantments.get(enchantKey, PersistentDataType.INTEGER),
-                NamedTextColor.GREEN));
+            lore.add(Component.text(magicalEnchantment.name() + " " + enchantments.get(enchantKey, PersistentDataType.INTEGER),
+                NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
         }
         meta.lore(lore);
     }

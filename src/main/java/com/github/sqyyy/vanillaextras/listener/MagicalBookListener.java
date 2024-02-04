@@ -2,6 +2,7 @@ package com.github.sqyyy.vanillaextras.listener;
 
 import com.github.sqyyy.vanillaextras.VanillaExtras;
 import com.github.sqyyy.vanillaextras.item.ItemType;
+import com.github.sqyyy.vanillaextras.item.MagicalBook;
 import com.github.sqyyy.vanillaextras.magicalbook.MagicalEnchantment;
 import com.github.sqyyy.vanillaextras.util.ItemUtil;
 import net.kyori.adventure.text.Component;
@@ -21,13 +22,15 @@ import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Objects;
+
 public class MagicalBookListener implements Listener {
     private final VanillaExtras vanillaExtras;
     private final ItemType magicalBook;
 
-    public MagicalBookListener(VanillaExtras vanillaExtras, ItemType magicalBook) {
+    public MagicalBookListener(VanillaExtras vanillaExtras) {
         this.vanillaExtras = vanillaExtras;
-        this.magicalBook = magicalBook;
+        this.magicalBook = Objects.requireNonNull(vanillaExtras.itemTypes().get(MagicalBook.KEY));
     }
 
     @EventHandler
@@ -112,8 +115,12 @@ public class MagicalBookListener implements Listener {
             event.setResult(null);
             return;
         }
+        // At least one enchantment was merged
         ItemStack mergedBook = this.magicalBook.create();
-        mergedBook.editMeta(meta -> ItemUtil.setBookEnchantments(this.vanillaExtras, meta, firstEnchants));
+        mergedBook.editMeta(meta -> {
+            ItemUtil.setBookEnchantments(meta, firstEnchants); // Set enchantments
+            ItemUtil.setEnchantmentsLore(this.vanillaExtras, meta, firstEnchants); // Set lore
+        });
         event.getInventory().setRepairCost(1); // TODO: add repair cost
         event.setResult(mergedBook);
     }
@@ -137,7 +144,7 @@ public class MagicalBookListener implements Listener {
             if (magicalEnchantment == null) { // Invalid enchantment
                 continue;
             }
-            if (magicalEnchantment.enchantPredicate().isCompatible(firstItem)) { // The enchantment is not compatible
+            if (!magicalEnchantment.enchantPredicate().isCompatible(firstItem)) { // The enchantment is not compatible
                 continue;
             }
             if (mergeEnchantment(magicalEnchantment, itemEnchants, bookEnchants,
@@ -150,7 +157,8 @@ public class MagicalBookListener implements Listener {
             return;
         }
         // There is at least one compatible enchantment
-        ItemUtil.setEnchantments(this.vanillaExtras, itemMeta, itemEnchants);
+        ItemUtil.setEnchantments(itemMeta, itemEnchants); // Set enchantments
+        ItemUtil.setEnchantmentsLore(this.vanillaExtras, itemMeta, itemEnchants); // Set lore
         resultItem.setItemMeta(itemMeta);
         event.getInventory().setRepairCost(1); // TODO: add repair cost
         event.setResult(resultItem);
@@ -173,8 +181,10 @@ public class MagicalBookListener implements Listener {
         int level;
         if (targetLevel == secondLevel) { // Equal levels
             level = targetLevel + 1;
-        } else { // Different levels
-            level = Math.max(targetLevel, secondLevel);
+        } else if (secondLevel > targetLevel) { // Override lower level by higher level
+            level = secondLevel;
+        } else { // Source level is lower than target level
+            return false;
         }
         if (level > magicalEnchantment.maxLevel()) { // Max level reached
             return false;
